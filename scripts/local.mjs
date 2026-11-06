@@ -29,7 +29,7 @@ const DB = {
       const prepared = database.prepare(sql);
       return {
         first: async () => prepared.get(...values),
-        all: async () => ({ results: prepared.all(...values) }),
+        all: () => ({ results: prepared.all(...values) }),
         run: async () => ({ meta: prepared.run(...values) })
       };
     } };
@@ -37,7 +37,7 @@ const DB = {
   async batch(statements) {
     database.exec("BEGIN");
     try {
-      const result = await Promise.all(statements.map((statement) => statement.all()));
+      const result = statements.map((statement) => statement.all());
       database.exec("COMMIT");
       return result;
     } catch (error) {
@@ -58,7 +58,7 @@ createServer(async (req, res) => {
     let size = 0;
     for await (const part of req) {
       size += part.length;
-      if (size > 32768) {
+      if (size > 524288) {
         res.writeHead(413).end();
         return;
       }

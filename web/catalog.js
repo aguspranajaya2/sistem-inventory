@@ -9,3 +9,5 @@ export const itCategories = [
   "Printer & bahan cetak",
   "Peralatan IT lain"
 ];
+
+export const importLimit = 200;

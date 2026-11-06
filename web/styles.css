@@ -120,6 +120,22 @@ dialog::backdrop { background: #18231e66; }
 .field input, .field select { min-width: 0; font-weight: 400; }
 .field.wide { grid-column: 1 / -1; }
 dialog .actions { margin-top: 14px; justify-content: end; }
+.import-dialog { width: min(940px, calc(100% - 24px)); }
+.import-guide { color: var(--muted); margin-bottom: 12px; }
+.import-tools { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.import-tools .field { margin-right: auto; }
+.file-control { position: relative; justify-self: start; }
+.file-control input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.file-control:focus-within .btn { outline: 2px solid var(--accent); outline-offset: 3px; }
+.import-categories { margin: 10px 0; color: var(--muted); }
+.import-categories summary { cursor: pointer; }
+.import-categories p { margin-top: 4px; }
+.import-status { margin-top: 10px; min-height: 21px; }
+.import-status.error, .import-preview .error { color: var(--negative); }
+.import-preview { max-height: min(320px, 40vh); overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); margin-top: 8px; }
+.import-preview table { min-width: 740px; }
+.import-preview th { position: sticky; top: 0; background: var(--surface); }
+.import-preview td, .import-preview th { padding: 8px 10px; }
 .toast { position: fixed; right: 18px; bottom: 18px; z-index: 4; max-width: min(420px,calc(100% - 36px)); background: #20372b; color: white; padding: 12px 16px; border-radius: 7px; }
 [hidden] { display: none !important; }
 @media (max-width: 1090px) {

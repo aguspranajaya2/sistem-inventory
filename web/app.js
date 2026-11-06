@@ -1,5 +1,6 @@
 import { demoData } from "./demo.js";
 import { itCategories } from "./catalog.js";
+import { openImport } from "./import-ui.js";
 import { downloadReport } from "./reports.js";
 
 const el = (selector) => document.querySelector(selector);
@@ -136,7 +137,7 @@ function itemRows() {
 
 function inventory() {
   const cats = categories(source().items);
-  return head("Barang IT", "Cari perangkat berdasarkan SKU, merek, dan model. Pantau saldo per kategori.", state.demo ? "" : button("item", "Tambah barang", "plus", "primary")) +
+  return head("Barang IT", "Cari perangkat berdasarkan SKU, merek, dan model. Pantau saldo per kategori.", state.demo ? "" : button("import", "Impor Excel / CSV") + button("item", "Tambah barang", "plus", "primary")) +
     '<section class="panel"><div class="toolbar">' + search("search", "Pencarian", state.search) +
     toolbarSelect("category", "Kategori", option("", "Semua kategori", state.category) + cats.map((v) => option(v, v, state.category)).join("")) +
     toolbarSelect("itemStatus", "Status", option("", "Semua status", state.itemStatus) + option("attention", "Perlu perhatian", state.itemStatus) +
@@ -236,7 +237,11 @@ function render() {
 async function request(path, method = "GET", data) {
   const response = await fetch(path, { method, headers: data ? { "content-type": "application/json" } : {}, body: data ? JSON.stringify(data) : undefined, cache: "no-store" });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !Object.keys(payload).length) throw new Error(payload.error || "Koneksi terputus. Periksa jaringan lalu coba lagi.");
+  if (!response.ok || !Object.keys(payload).length) {
+    const error = new Error(payload.error || "Koneksi terputus. Periksa jaringan lalu coba lagi.");
+    if (Array.isArray(payload.rows)) error.rows = payload.rows;
+    throw error;
+  }
   return payload;
 }
 
@@ -342,6 +347,7 @@ function openForm(type, id) {
       input.id = movementId;
     } else input.minimum = Number(input.minimum);
     save.disabled = true;
+    form.setAttribute("aria-busy", "true");
     errorLine.textContent = "";
     try {
       await request(movement ? "/api/movements" : edit ? "/api/items/" + id : "/api/items", edit ? "PATCH" : "POST", input);
@@ -362,13 +368,14 @@ function openForm(type, id) {
       }
     } finally {
       save.disabled = false;
+      form.removeAttribute("aria-busy");
     }
   });
   dialog.showModal();
 }
 
 dialog.addEventListener("cancel", (event) => {
-  if (dialog.querySelector("[type=submit]:disabled")) event.preventDefault();
+  if (dialog.querySelector('form[aria-busy="true"]')) event.preventDefault();
 });
 el("#warehouse-icon").innerHTML = icon("warehouse");
 el("#refresh").innerHTML = icon("refresh");
@@ -377,8 +384,9 @@ document.addEventListener("click", async (event) => {
   if (!target) return;
   const { act, id, format } = target.dataset;
   if (act === "refresh") await refresh();
-  if (act === "close" && !dialog.querySelector("[type=submit]:disabled")) dialog.close();
+  if (act === "close" && !dialog.querySelector('form[aria-busy="true"]')) dialog.close();
   if (["item", "edit", "movement"].includes(act)) openForm(act, id);
+  if (act === "import" && !state.demo && state.fresh) openImport({ dialog, request, refresh, notify });
   if (act === "watch") {
     state.itemStatus = "attention";
     state.category = "";

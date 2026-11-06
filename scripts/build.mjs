@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
-import { itCategories } from "../web/catalog.js";
+import { itCategories, importLimit } from "../web/catalog.js";
 
 const source = new URL("../", import.meta.url);
 const read = (name) => readFile(new URL(name, source), "utf8");
@@ -11,6 +11,11 @@ for (const [name, type] of Object.entries({
   "reports.js": "text/javascript; charset=utf-8",
   "demo.js": "text/javascript; charset=utf-8",
   "catalog.js": "text/javascript; charset=utf-8",
+  "import-ui.js": "text/javascript; charset=utf-8",
+  "import-file.js": "text/javascript; charset=utf-8",
+  "import-xlsx-worker.js": "text/javascript; charset=utf-8",
+  "vendor/xlsx.mini.min.js": "text/javascript; charset=utf-8",
+  "vendor/LICENSE-sheetjs.txt": "text/plain; charset=utf-8",
   "mark.svg": "image/svg+xml"
 })) {
   assets[name === "index.html" ? "/" : "/" + name] = { type, body: await read("web/" + name) };
@@ -20,5 +25,6 @@ await mkdir(new URL("dist/.openai/", source), { recursive: true });
 await writeFile(new URL("dist/server/index.js", source),
   (await read("worker/index.js"))
     .replace("/* IT_CATEGORIES */ []", () => JSON.stringify(itCategories))
+    .replace("/* IMPORT_LIMIT */ 0", String(importLimit))
     .replace("/* ASSETS */ {}", () => JSON.stringify(assets)));
 await copyFile(new URL(".openai/hosting.json", source), new URL("dist/.openai/hosting.json", source));

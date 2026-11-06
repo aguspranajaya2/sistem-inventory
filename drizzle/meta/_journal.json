@@ -3,6 +3,7 @@
   "dialect": "sqlite",
   "entries": [
     { "idx": 0, "version": "6", "when": 1793937600000, "tag": "0000_inventory", "breakpoints": true },
-    { "idx": 1, "version": "6", "when": 1793941200000, "tag": "0001_it_catalog", "breakpoints": true }
+    { "idx": 1, "version": "6", "when": 1793941200000, "tag": "0001_it_catalog", "breakpoints": true },
+    { "idx": 2, "version": "6", "when": 1793944800000, "tag": "0002_import_batches", "breakpoints": true }
   ]
 }
