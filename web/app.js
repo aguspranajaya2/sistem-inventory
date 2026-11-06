@@ -1,4 +1,5 @@
 import { demoData } from "./demo.js";
+import { itCategories } from "./catalog.js";
 import { downloadReport } from "./reports.js";
 
 const el = (selector) => document.querySelector(selector);
@@ -45,8 +46,10 @@ const categories = (items) => [...new Set(items.map((item) => item.category))].s
 const message = (text) => '<p class="empty">' + escape(text) + '</p>';
 const button = (action, title, glyph, style = "", other = "") => '<button type="button" class="btn ' + style + '" data-act="' + action + '" ' + other + '>' + (glyph ? icon(glyph) : "") + title + '</button>';
 const toolbarSelect = (id, label, options) => '<label>' + label + '<select id="' + id + '" aria-label="' + label + '">' + options + '</select></label>';
-const search = (id, label, value) => '<label>' + label + '<input type="search" id="' + id + '" placeholder="Cari nama atau SKU…" value="' + escape(value) + '"></label>';
-const match = (item, query) => (item.name + " " + item.sku).toLocaleLowerCase("id").includes(query.trim().toLocaleLowerCase("id"));
+const search = (id, label, value) => '<label>' + label + '<input type="search" id="' + id + '" placeholder="Nama, SKU, merek, atau model…" value="' + escape(value) + '"></label>';
+const itemIdentity = (item) => [item.sku, item.brand, item.model].filter(Boolean).join(" · ");
+const match = (item, query) => [item.name, item.sku, item.brand, item.model].join(" ")
+  .toLocaleLowerCase("id").includes(query.trim().toLocaleLowerCase("id"));
 const head = (title, subtitle, actions = "") => '<header class="page-head"><div><h1>' + title + '</h1><p>' + subtitle + '</p></div>' + (actions ? '<div class="actions">' + actions + '</div>' : "") + '</header>';
 const panelHead = (title, subtitle = "", action = "") => '<div class="panel-head"><div><h2>' + title + '</h2>' + (subtitle ? '<p>' + subtitle + '</p>' : "") + '</div>' + action + '</div>';
 const pill = (type, text) => '<span class="pill ' + type + '">' + escape(text) + '</span>';
@@ -62,7 +65,7 @@ function movementTable(movements, items) {
   if (!movements.length) return message("Belum ada mutasi untuk ditampilkan.");
   return table(["Barang", "Jenis", "Perubahan", "Saldo", "Waktu (WITA)", "Catatan"], movements.map((m) => {
     const item = items.get(m.itemId);
-    return ['<strong>' + escape(item.name) + '</strong><small>' + escape(item.sku) + '</small>', pill(m.kind === "in" ? "in" : "", kinds[m.kind]),
+    return ['<strong>' + escape(item.name) + '</strong><small>' + escape(itemIdentity(item)) + '</small>', pill(m.kind === "in" ? "in" : "", kinds[m.kind]),
       deltaText(m.delta) + " " + escape(item.unit), num.format(m.balance), escape(stamp(m.at).replace(" WITA", "")), escape(m.note || "—")];
   }), "Daftar mutasi", "data-table", [2, 3]);
 }
@@ -98,18 +101,18 @@ function overview() {
   const zero = items.filter((item) => status(item) === "zero");
   const attention = [...zero, ...low.sort((a, b) => a.stock / a.minimum - b.stock / b.minimum)];
   const recent = movements.filter((m) => dayKey(m.at) >= dayKey(daysAgo(6)));
-  const subtitle = items.length ? (attention.length ? attention.length + " barang perlu perhatian di gudang utama." : "Seluruh barang berada di atas batas minimum.") : "Mulai dengan membuat barang, lalu catat stok awal sebagai mutasi masuk.";
+  const subtitle = items.length ? (attention.length ? attention.length + " barang perlu perhatian di gudang IT." : "Seluruh barang berada di atas batas minimum.") : "Tambahkan perangkat atau perlengkapan IT, lalu catat stok awal sebagai mutasi masuk.";
   const metrics = [
-    ["Barang terdaftar", items.length, "SKU di gudang utama"],
+    ["Barang terdaftar", items.length, "SKU di gudang IT"],
     ["Stok menipis", low.length, "Saldo ≤ stok minimum"],
     ["Stok habis", zero.length, "Saldo sama dengan nol"],
     ["Mutasi 7 hari", recent.length, "Jumlah transaksi"]
   ].map(([name, value, desc], i) => '<div class="metric"><span>' + name + '</span><strong' + ([1, 2].includes(i) && value ? ' class="warn"' : '') + '>' + num.format(value) + '</strong><small>' + desc + '</small></div>').join("");
   const watch = attention.length ? '<div class="watch-list">' + attention.slice(0, 4).map((item) =>
-    '<div class="watch-row"><div><strong>' + escape(item.name) + '</strong><small>' + escape(item.sku) + ' · ' + escape(item.unit) + '</small></div><div class="ratio"><b>' +
+    '<div class="watch-row"><div><strong>' + escape(item.name) + '</strong><small>' + escape(itemIdentity(item)) + ' · ' + escape(item.unit) + '</small></div><div class="ratio"><b>' +
     num.format(item.stock) + '</b> / ' + num.format(item.minimum) + '<span class="ratio-track"><progress max="' + Math.max(1, item.minimum) + '" value="' + item.stock + '" aria-label="Saldo dibanding minimum"></progress></span></div></div>').join("") + '</div>'
     : message(items.length ? "Belum ada barang di bawah batas stok." : "Daftar barang di bawah batas stok akan muncul di sini.");
-  return head("Ringkasan stok", subtitle, state.demo ? "" : button("item", "Tambah barang", "plus") + button("movement", "Catat mutasi", "mutasi", "primary")) +
+  return head("Ringkasan stok IT", subtitle, state.demo ? "" : button("item", "Tambah barang", "plus") + button("movement", "Catat mutasi", "mutasi", "primary")) +
     '<section class="metrics panel" aria-label="Indikator stok">' + metrics + '</section><div class="overview-grid"><section class="panel chart-panel">' +
     panelHead("Arus mutasi", "Jumlah transaksi per hari · WITA", '<div class="toolbar">' + toolbarSelect("period", "Rentang", option("7", "7 hari", String(state.period)) + option("14", "14 hari", String(state.period))) + '</div>') +
     chart(movements) + '</section><section class="panel">' + panelHead("Pantau stok", "Saldo dibanding batas minimum", button("watch", "Lihat barang", "arrow", "link")) +
@@ -124,7 +127,8 @@ function itemRows() {
   const tally = el("#tally");
   if (tally) tally.textContent = num.format(items.length) + " barang";
   return items.length ? table(["Barang", "Kategori", "Stok", "Minimum", "Status", ...(state.demo ? [] : ["Tindakan"])], items.map((item) => [
-    '<strong>' + escape(item.name) + '</strong><small>' + escape(item.sku) + '</small>', escape(item.category),
+    '<strong>' + escape(item.name) + '</strong><small>' + escape(itemIdentity(item)) + '</small>', escape(item.category) +
+      (itCategories.includes(item.category) ? "" : '<small>Kategori lama</small>'),
     num.format(item.stock) + " " + escape(item.unit), num.format(item.minimum), pill(status(item), statusLabels[status(item)]),
     ...(state.demo ? [] : [action("edit", item.id, "Edit " + item.name, "edit") + action("movement", item.id, "Catat mutasi " + item.name, "mutasi")])
   ]), "Stok barang", "data-table", [2, 3]) : message("Tidak ada barang yang cocok dengan filter.");
@@ -132,7 +136,7 @@ function itemRows() {
 
 function inventory() {
   const cats = categories(source().items);
-  return head("Barang", "Kelola SKU, satuan, kategori, dan batas minimum stok.", state.demo ? "" : button("item", "Tambah barang", "plus", "primary")) +
+  return head("Barang IT", "Cari perangkat berdasarkan SKU, merek, dan model. Pantau saldo per kategori.", state.demo ? "" : button("item", "Tambah barang", "plus", "primary")) +
     '<section class="panel"><div class="toolbar">' + search("search", "Pencarian", state.search) +
     toolbarSelect("category", "Kategori", option("", "Semua kategori", state.category) + cats.map((v) => option(v, v, state.category)).join("")) +
     toolbarSelect("itemStatus", "Status", option("", "Semua status", state.itemStatus) + option("attention", "Perlu perhatian", state.itemStatus) +
@@ -165,21 +169,21 @@ function reportData() {
     const filtered = movements.filter((m) => include(byId.get(m.itemId)) && dayKey(m.at) >= state.from && dayKey(m.at) <= state.until);
     return { title: "Laporan riwayat mutasi", filename: filename("mutasi"),
       caption: caption(state.from + " s.d. " + state.until + " (WITA)", filtered.length),
-      columns: ["Waktu (WITA)", "SKU", "Nama barang", "Jenis", "Perubahan", "Saldo", "Satuan", "Catatan"],
-      widths: [114, 85, 151, 61, 65, 60, 52, 194],
+      columns: ["Waktu (WITA)", "SKU", "Nama barang", "Jenis", "Perubahan", "Saldo", "Satuan", "Catatan", "Merek", "Model"],
+      widths: [99, 65, 118, 52, 63, 45, 52, 124, 70, 94],
       rows: filtered.map((m) => {
         const item = byId.get(m.itemId);
-        return [stamp(m.at).replace(" WITA", ""), item.sku, item.name, kinds[m.kind], m.delta, m.balance, item.unit, m.note];
+        return [stamp(m.at).replace(" WITA", ""), item.sku, item.name, kinds[m.kind], m.delta, m.balance, item.unit, m.note, item.brand, item.model];
       })
     };
   }
   const critical = state.reportType === "critical";
   const rows = items.filter((item) => include(item) && (!critical || status(item) !== "ok")).map((item) =>
-    [item.sku, item.name, item.category, item.unit, item.stock, item.minimum, statusLabels[status(item)]]);
+    [item.sku, item.name, item.category, item.unit, item.stock, item.minimum, statusLabels[status(item)], item.brand, item.model]);
   return { title: critical ? "Laporan stok perlu perhatian" : "Laporan posisi stok", filename: filename(critical ? "stok-kritis" : "posisi-stok"),
     caption: caption("Snapshot " + stamp(state.demo || !state.fresh ? new Date() : state.fresh), rows.length),
-    columns: ["SKU", "Nama barang", "Kategori", "Satuan", "Saldo", "Minimum", "Status"],
-    widths: [99, 229, 120, 76, 72, 76, 110], rows };
+    columns: ["SKU", "Nama barang", "Kategori", "Satuan", "Saldo", "Minimum", "Status", "Merek", "Model"],
+    widths: [70, 155, 114, 57, 52, 58, 92, 80, 104], rows };
 }
 
 function reports() {
@@ -209,18 +213,18 @@ function render() {
   el("#connection").textContent = state.demo ? "Data contoh" : state.error ? "Gagal memuat" : state.fresh ? (location.hostname === "127.0.0.1" ? "Penyimpanan lokal" : "Penyimpanan online") : "Memuat inventaris…";
   const notice = el("#notice");
   if (state.demo) {
-    notice.innerHTML = '<div class="notice"><span><strong>Data contoh</strong> · Coba filter dan unduh laporan.</span>' + button("demo", "Buka inventaris", "arrow", "link") + '</div>';
+    notice.innerHTML = '<div class="notice"><span><strong>Data contoh IT</strong> · Coba filter dan unduh laporan.</span>' + button("demo", "Buka inventaris", "arrow", "link") + '</div>';
   } else if (state.error) {
     notice.innerHTML = '<div class="notice error" role="alert"><span>' + escape(state.error) + '</span>' + button("refresh", "Coba lagi", "refresh") + '</div>';
   } else if (state.ready && !state.live.items.length) {
-    notice.innerHTML = '<div class="notice"><span>Inventaris Anda siap diisi. Lihat data contoh untuk mencoba alur laporan.</span>' + button("demo", "Lihat data contoh", "arrow", "link") + '</div>';
+    notice.innerHTML = '<div class="notice"><span>Inventaris IT Anda siap diisi. Lihat data contoh untuk mencoba alur laporan.</span>' + button("demo", "Lihat data contoh", "arrow", "link") + '</div>';
   } else notice.replaceChildren();
   if (!state.ready && !state.demo) {
-    view.innerHTML = head(labels[page], "Memuat inventaris gudang utama…");
+    view.innerHTML = head(labels[page], "Memuat inventaris gudang IT…");
     return;
   }
   if (state.error && !state.fresh && !state.demo) {
-    view.innerHTML = head(labels[page], "Data gudang utama belum dapat ditampilkan.", button("demo", "Lihat data contoh", "arrow"));
+    view.innerHTML = head(labels[page], "Data gudang IT belum dapat ditampilkan.", button("demo", "Lihat data contoh", "arrow"));
     return;
   }
   view.innerHTML = ({ ringkasan: overview, barang: inventory, mutasi: ledger, laporan: reports })[page]();
@@ -270,6 +274,13 @@ function field(label, name, options = "", value = "", wide = false) {
   return '<label class="field' + (wide ? " wide" : "") + '">' + label + '<input name="' + name + '" ' + options + ' value="' + escape(value) + '"></label>';
 }
 
+function categoryField(current) {
+  const legacy = current && !itCategories.includes(current) ? option(current, current + " (kategori lama)", current) : "";
+  return '<label class="field">Kategori IT<select name="category" aria-label="Kategori IT" required>' +
+    option("", "Pilih kategori IT", current ?? "") + legacy +
+    itCategories.map((category) => option(category, category, current)).join("") + '</select></label>';
+}
+
 function openForm(type, id) {
   if (state.demo || !state.fresh) return;
   const items = source().items.map((item) => ({ ...item }));
@@ -283,14 +294,16 @@ function openForm(type, id) {
   const edit = type === "edit";
   const title = movement ? "Catat mutasi" : edit ? "Edit barang" : "Tambah barang";
   const fields = movement ?
-    '<label class="field wide">Barang<select name="itemId" aria-label="Barang" required>' + items.map((item) => option(item.id, item.sku + " · " + item.name, id)).join("") + '</select></label>' +
+    '<label class="field wide">Barang<select name="itemId" aria-label="Barang" required>' + items.map((item) => option(item.id, [item.sku, item.name, item.brand, item.model].filter(Boolean).join(" · "), id)).join("") + '</select></label>' +
     '<label class="field">Jenis<select name="kind" aria-label="Jenis">' + Object.entries(kinds).map(([k, v]) => option(k, v, "")).join("") + '</select></label>' +
     field('<span id="quantity-label">Jumlah masuk</span>', "quantity", 'type="number" min="1" max="1000000000" step="1" required') +
     field("Catatan", "note", 'maxlength="180" placeholder="Misalnya penerimaan pemasok"', "", true) :
     field("SKU", "sku", 'maxlength="32" required', item?.sku) +
     field("Nama barang", "name", 'maxlength="90" required', item?.name) +
-    field("Kategori", "category", 'maxlength="40" required', item?.category) +
-    field("Satuan", "unit", 'maxlength="20" required placeholder="pcs, rim, atau kotak"', item?.unit) +
+    categoryField(item?.category) +
+    field("Satuan", "unit", 'maxlength="20" required placeholder="unit, pcs, atau rol"', item?.unit) +
+    field("Merek (opsional)", "brand", 'maxlength="60" placeholder="Contoh: Dell"', item?.brand) +
+    field("Model (opsional)", "model", 'maxlength="60" placeholder="Contoh: Latitude 5440"', item?.model) +
     field("Stok minimum", "minimum", 'type="number" min="0" max="1000000000" step="1" required', item?.minimum ?? 0, true);
   dialog.innerHTML = '<div class="dialog-head"><h2 id="dialog-title">' + title + '</h2>' + action("close", "", "Tutup", "close") +
     '</div><form><div class="form-grid">' + fields + '</div>' +

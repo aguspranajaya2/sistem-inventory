@@ -1,0 +1,3 @@
+ALTER TABLE items ADD COLUMN brand TEXT NOT NULL DEFAULT '';
+--> statement-breakpoint
+ALTER TABLE items ADD COLUMN model TEXT NOT NULL DEFAULT '';

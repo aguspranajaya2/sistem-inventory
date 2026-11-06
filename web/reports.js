@@ -138,7 +138,7 @@ async function pdf(report) {
     ctx.fillRect(0, 0, 842, 595);
     ctx.fillStyle = "#215b45";
     ctx.font = "600 11px sans-serif";
-    ctx.fillText("RUANG STOK  /  GUDANG UTAMA", left, 31);
+    ctx.fillText("RUANG STOK  /  GUDANG IT", left, 31);
     ctx.font = "bold 23px sans-serif";
     ctx.fillText(report.title, left, 59);
     ctx.font = "11px sans-serif";

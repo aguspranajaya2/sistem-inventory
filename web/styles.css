@@ -110,7 +110,7 @@ td small { display: block; margin-top: 2px; }
 .toolbar .tally { margin-left: auto; color: var(--muted); font-size: 13px; align-self: end; padding-bottom: 7px; }
 .exports { border-block: 1px solid var(--rule); background: #fafbf9; }
 .exports p { margin-right: auto; color: var(--muted); }
-.report-table { min-width: 630px; }
+.report-table { min-width: 840px; }
 .dialog-error { color: var(--negative); min-height: 21px; }
 dialog { width: min(510px, calc(100% - 24px)); max-height: calc(100% - 24px); border: 1px solid var(--border); border-radius: 10px; padding: 22px; color: var(--text); }
 dialog::backdrop { background: #18231e66; }

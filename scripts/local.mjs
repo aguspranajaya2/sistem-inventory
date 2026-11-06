@@ -6,15 +6,22 @@ import worker from "../dist/server/index.js";
 mkdirSync(new URL("../data/", import.meta.url), { recursive: true });
 const database = new DatabaseSync(process.env.RUANG_STOK_EPHEMERAL === "1" ? ":memory:" : new URL("../data/inventory.sqlite", import.meta.url));
 database.exec("PRAGMA foreign_keys = ON");
-if (!database.prepare("SELECT 1 FROM sqlite_schema WHERE name = 'items'").get()) {
-  database.exec("BEGIN");
-  try {
-    database.exec(readFileSync(new URL("../drizzle/0000_inventory.sql", import.meta.url), "utf8"));
-    database.exec("COMMIT");
-  } catch (error) {
-    database.exec("ROLLBACK");
-    throw error;
+const migrations = new URL("../drizzle/", import.meta.url);
+const { entries } = JSON.parse(readFileSync(new URL("meta/_journal.json", migrations), "utf8"));
+database.exec("BEGIN IMMEDIATE");
+try {
+  const { user_version: version } = database.prepare("PRAGMA user_version").get();
+  if (version > entries.length) throw new Error("Versi basis data lokal lebih baru dari aplikasi.");
+  // The original local server created the initial schema without setting user_version.
+  const hasInitialSchema = version === 0 && database.prepare("SELECT 1 FROM sqlite_schema WHERE name = 'items'").get();
+  for (const { tag } of entries.slice(hasInitialSchema ? 1 : version)) {
+    database.exec(readFileSync(new URL(tag + ".sql", migrations), "utf8"));
   }
+  database.exec("PRAGMA user_version = " + entries.length);
+  database.exec("COMMIT");
+} catch (error) {
+  database.exec("ROLLBACK");
+  throw error;
 }
 const DB = {
   prepare(sql) {

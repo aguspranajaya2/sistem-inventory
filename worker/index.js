@@ -1,4 +1,5 @@
 const assets = /* ASSETS */ {};
+const itCategories = /* IT_CATEGORIES */ [];
 
 const headers = {
   "cache-control": "no-store",
@@ -28,30 +29,44 @@ const statement = (db, query, ...parameters) => db.prepare(query).bind(...parame
 
 async function snapshot(db, owner) {
   const [items, movements] = await db.batch([
-    statement(db, "SELECT id, sku, name, category, unit, minimum, stock FROM items WHERE owner = ? ORDER BY name COLLATE NOCASE, sku", owner),
+    statement(db, "SELECT id, sku, name, category, unit, minimum, stock, brand, model FROM items WHERE owner = ? ORDER BY name COLLATE NOCASE, sku", owner),
     statement(db, "SELECT m.id, m.item_id AS itemId, m.kind, m.delta, m.balance, m.note, m.at FROM movements m WHERE m.owner = ? ORDER BY m.at DESC, m.rowid DESC", owner)
   ]);
   return { items: items.results, movements: movements.results };
 }
 
 async function saveItem(db, owner, input, itemId) {
-  const fields = [
-    field(input.sku, 32, "SKU").toUpperCase(),
-    field(input.name, 90, "Nama barang"),
-    field(input.category, 40, "Kategori"),
-    field(input.unit, 20, "Satuan"),
-    number(input.minimum, 0, "Stok minimum")
-  ];
-  const result = itemId
-    ? await statement(db, "UPDATE items SET sku = ?, name = ?, category = ?, unit = ?, minimum = ? WHERE owner = ? AND id = ? AND (unit = ? OR NOT EXISTS (SELECT 1 FROM movements WHERE owner = ? AND item_id = ?))", ...fields, owner, itemId, fields[3], owner, itemId).run()
-    : await statement(db, "INSERT INTO items (sku, name, category, unit, minimum, owner, id) VALUES (?, ?, ?, ?, ?, ?, ?)", ...fields, owner, crypto.randomUUID()).run();
-  if (!result.meta.changes) {
-    const exists = itemId && await statement(db, "SELECT 1 FROM items WHERE owner = ? AND id = ?", owner, itemId).first();
-    return exists
-      ? json({ error: "Satuan terkunci setelah barang memiliki riwayat mutasi." }, 409)
-      : json({ error: "Barang tidak ditemukan." }, 404);
+  const sku = field(input.sku, 32, "SKU").toUpperCase();
+  const name = field(input.name, 90, "Nama barang");
+  const category = field(input.category, 40, "Kategori");
+  const unit = field(input.unit, 20, "Satuan");
+  const minimum = number(input.minimum, 0, "Stok minimum");
+  const brand = input.brand === undefined ? null : field(input.brand, 60, "Merek", false);
+  const model = input.model === undefined ? null : field(input.model, 60, "Model", false);
+  const isItCategory = itCategories.includes(category);
+  const categoryError = "Pilih salah satu kategori perangkat IT.";
+  if (!itemId && !isItCategory) throw new InputError(categoryError);
+
+  if (!itemId) {
+    await statement(db, "INSERT INTO items (sku, name, category, unit, minimum, brand, model, owner, id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      sku, name, category, unit, minimum, brand ?? "", model ?? "", owner, crypto.randomUUID()).run();
+    return json({ ok: true }, 201);
   }
-  return json({ ok: true }, itemId ? 200 : 201);
+
+  // A legacy category can be retained on its existing item or replaced with an IT category.
+  const result = await statement(db, `UPDATE items
+    SET sku = ?, name = ?, category = ?, unit = ?, minimum = ?,
+        brand = COALESCE(?, brand), model = COALESCE(?, model)
+    WHERE owner = ? AND id = ? AND (? = 1 OR category = ?)
+      AND (unit = ? OR NOT EXISTS (SELECT 1 FROM movements WHERE owner = ? AND item_id = ?))`,
+  sku, name, category, unit, minimum, brand, model, owner, itemId, Number(isItCategory), category, unit, owner, itemId).run();
+  if (!result.meta.changes) {
+    const existing = await statement(db, "SELECT category FROM items WHERE owner = ? AND id = ?", owner, itemId).first();
+    if (!existing) return json({ error: "Barang tidak ditemukan." }, 404);
+    if (!isItCategory && category !== existing.category) throw new InputError(categoryError);
+    return json({ error: "Satuan terkunci setelah barang memiliki riwayat mutasi." }, 409);
+  }
+  return json({ ok: true });
 }
 
 async function saveMovement(db, owner, input) {
