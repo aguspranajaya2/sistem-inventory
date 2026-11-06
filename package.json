@@ -1,0 +1,10 @@
+{
+  "name": "ruang-stok",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "validate": "node scripts/validate-artifact.mjs",
+    "start": "node scripts/local.mjs"
+  }
+}

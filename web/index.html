@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Kelola barang, pantau mutasi, dan unduh laporan inventaris.">
+  <title>Ruang Stok · Inventaris</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Lewati ke konten</a>
+  <aside class="sidebar">
+    <a class="brand" href="#ringkasan"><img src="/mark.svg" alt="" width="34" height="34"><span>Ruang Stok<small>Manajemen inventaris</small></span></a>
+    <nav aria-label="Navigasi utama" id="navigation"></nav>
+    <div class="workspace">
+      <span class="workspace-icon" id="warehouse-icon" aria-hidden="true"></span>
+      <div><strong>Gudang utama</strong><small id="connection">Memuat inventaris…</small></div>
+      <button id="refresh" class="icon-btn" data-act="refresh" aria-label="Segarkan inventaris"></button>
+    </div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div id="notice"></div>
+    <div id="view"><header class="page-head"><div><h1>Ringkasan stok</h1><p>Memuat inventaris gudang utama…</p></div></header></div>
+  </main>
+  <dialog id="form-dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
