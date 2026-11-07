@@ -165,7 +165,7 @@ function reportData() {
   const byId = mapItems(items);
   const include = (item) => !state.reportCategory || item.category === state.reportCategory;
   const caption = (scope, count) => scope + "  •  " + (state.reportCategory || "Semua kategori") + "  •  " + num.format(count) + " baris" + (state.demo ? "  •  Data contoh" : "");
-  const filename = (name) => "ruang-stok-" + (state.demo ? "contoh-" : "") + name + "-" + dayKey();
+  const filename = (name) => "ruang-stok-it-" + (state.demo ? "contoh-" : "") + name + "-" + dayKey();
   if (state.reportType === "ledger") {
     const filtered = movements.filter((m) => include(byId.get(m.itemId)) && dayKey(m.at) >= state.from && dayKey(m.at) <= state.until);
     return { title: "Laporan riwayat mutasi", filename: filename("mutasi"),

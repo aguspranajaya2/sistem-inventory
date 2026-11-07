@@ -12,7 +12,7 @@ const columns = [
 ];
 
 export const importTemplate = {
-  filename: "ruang-stok-templat-impor",
+  filename: "ruang-stok-it-templat-impor",
   columns: columns.map(([, label]) => label),
   widths: columns.map(([, , width]) => width),
   rows: []

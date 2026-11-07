@@ -75,4 +75,4 @@ createServer(async (req, res) => {
     if (!res.headersSent) res.writeHead(500);
     res.end();
   }
-}).listen(port, "127.0.0.1", () => console.log("Ruang Stok lokal: " + origin));
+}).listen(port, "127.0.0.1", () => console.log("Ruang Stok IT lokal: " + origin));

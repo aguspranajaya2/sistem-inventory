@@ -1,4 +1,4 @@
-# Ruang Stok
+# Ruang Stok IT
 
 Aplikasi inventaris perangkat dan perlengkapan IT untuk satu gudang dalam bahasa Indonesia. Waktu pada dasbor dan laporan menggunakan WITA.
 
